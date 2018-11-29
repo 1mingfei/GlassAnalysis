@@ -137,6 +137,12 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
     # O as j
     OIndexList = ((NBList[1] >= OTypeStart) &\
                   (NBList[1] < OTypeEnd)).nonzero()[0]
+
+    BOIndexList, NBOIndexList  = get_BOList(listTypeName, listTypeNum, atoms,\
+                                            cutoff)[0],\
+                                 get_BOList(listTypeName, listTypeNum, atoms,\
+                                            cutoff)[1]
+
     #print(nnn)
     #print(len(MIndexList))
     #O-M-O
@@ -156,18 +162,142 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
             #print(i, MOIndex)
             for j in range(len(MOIndex)):
                 for k in range(j+1,len(MOIndex)):
-                    #if NBList[1][MOIndex[j]]==NBList[1][MOIndex[k]]:
-                    #    continue
-                    #else:
                     angles.append(atoms.get_angle(NBList[1][MOIndex[j]],\
                                                   i,\
                                                   NBList[1][MOIndex[k]],\
                                                   mic=True))
                     #print(angles[-1], NBList[1][MOIndex[j]],\
                     #      i, NBList[1][MOIndex[k]])
-    edges = np.arange(0.0, 180.0, dr)
-    h, binEdges = np.histogram(angles, edges)
-    plt.plot(binEdges[1:], h)
+    edges = np.arange(10.0, 180.0, dr)
+    h_omo, binEdges_omo = np.histogram(angles, edges)
+    plt.plot(binEdges_omo[1:], h_omo, label = 'O-'+str(MType)+'-O')
+
+    angles = []
+    #print("1nd index: ")
+    #print(NBList[0])
+    #print("2nd index: ")
+    #print(NBList[1])
+    for i in range(MTypeStart, MTypeEnd):
+        MOIndex = []
+        if nnn[i] < 2:
+            continue
+        else:
+            MOIndex = ((NBList[0] == i) & (NBList[1] < OTypeEnd) &\
+                       (NBList[1] >= OTypeStart)).nonzero()[0]
+
+            MBOIndex = np.copy(MOIndex)
+            for j in range(len(MOIndex)-1,-1,-1):
+                if not (NBList[1][MOIndex[j]] in BOIndexList) : 
+                    MBOIndex = np.delete(MBOIndex, j)
+
+            if (len(MBOIndex) == 0):
+                continue
+            else:
+                #print("i, MBOIndex")
+                #print(i, MBOIndex)
+                for j in range(len(MBOIndex)):
+                    for k in range(j+1,len(MBOIndex)):
+                        angles.append(atoms.get_angle(NBList[1][MBOIndex[j]],\
+                                                      i,\
+                                                      NBList[1][MBOIndex[k]],\
+                                                      mic=True))
+                        #print(angles[-1], NBList[1][MBOIndex[j]],\
+                        #      i, NBList[1][MBOIndex[k]])
+    if not(len(angles) == 0):
+        h_bo, binEdges_bo = np.histogram(angles, edges)
+        plt.plot(binEdges_bo[1:], h_bo, label = 'BO-'+MType+'-BO')
+    else:
+        print("There is no bridge-O-" + MType + \
+                "-bridge-O pair for the current cutoff.")
+
+    angles = []
+    #print("1nd index: ")
+    #print(NBList[0])
+    #print("2nd index: ")
+    #print(NBList[1])
+    for i in range(MTypeStart, MTypeEnd):
+        MOIndex = []
+        if nnn[i] < 2:
+            continue
+        else:
+            MOIndex = ((NBList[0] == i) & (NBList[1] < OTypeEnd) &\
+                       (NBList[1] >= OTypeStart)).nonzero()[0]
+
+            MNBOIndex = np.copy(MOIndex)
+            for j in range(len(MOIndex)-1,-1,-1):
+                if not (NBList[1][MOIndex[j]] in NBOIndexList) : 
+                    MNBOIndex = np.delete(MNBOIndex, j)
+
+            if (len(MNBOIndex) == 0):
+                continue
+            else:
+                #print("i, MNBOIndex")
+                #print(i, MNBOIndex)
+                for j in range(len(MNBOIndex)):
+                    for k in range(j+1,len(MNBOIndex)):
+                        angles.append(atoms.get_angle(NBList[1][MNBOIndex[j]],\
+                                      i,\
+                                      NBList[1][MNBOIndex[k]],\
+                                      mic=True))
+                        #print(angles[-1], NBList[1][MNBOIndex[j]],\
+                        #      i, NBList[1][MNBOIndex[k]])
+    if not(len(angles) == 0):
+        h_nbo, binEdges_nbo = np.histogram(angles, edges)
+        plt.plot(binEdges_nbo[1:], h_nbo, label = 'NBO-'+MType+'-NBO')
+    else:
+        print("there is no nonbridge-O-" + MType + \
+                "-nonbridge-O pair for the current cutoff.")
+
+    angles = []
+    #print("1nd index: ")
+    #print(NBList[0])
+    #print("2nd index: ")
+    #print(NBList[1])
+    #print(BOIndexList)
+    #print(NBOIndexList)
+    for i in range(MTypeStart, MTypeEnd):
+        MOIndex = []
+        if nnn[i] < 2:
+            continue
+        else:
+            MOIndex = ((NBList[0] == i) & (NBList[1] < OTypeEnd) &\
+                       (NBList[1] >= OTypeStart)).nonzero()[0]
+            MBOIndex = np.copy(MOIndex)
+            MNBOIndex = np.copy(MOIndex)
+            for j in range(len(MOIndex)-1,-1,-1):
+                if not (NBList[1][MOIndex[j]] in BOIndexList) : 
+                    MBOIndex = np.delete(MBOIndex, j)
+            for j in range(len(MOIndex)-1,-1,-1):
+                if not (NBList[1][MOIndex[j]] in NBOIndexList) : 
+                    MNBOIndex = np.delete(MNBOIndex, j)
+
+            if (len(MBOIndex) == 0 or len(MNBOIndex) == 0 ):
+                continue
+            else:
+                #print("i, MBOIndex")
+                #print(i, MBOIndex)
+                #print("i, MNBOIndex")
+                #print(i, MNBOIndex)
+                for j in range(len(MBOIndex)):
+                    for k in range(len(MNBOIndex)):
+                        if (NBList[1][MBOIndex[j]] == NBList[1][MNBOIndex[k]]):
+                            continue
+                        else:
+                            angles.append(atoms.get_angle(NBList[1][MBOIndex[j]],\
+                                      i,\
+                                      NBList[1][MNBOIndex[k]],\
+                                      mic=True))
+                        #print(angles[-1], NBList[1][MBOIndex[j]],\
+                        #      i, NBList[1][MNBOIndex[k]])
+    if not(len(angles) == 0):
+        h_nbo, binEdges_nbo = np.histogram(angles, edges)
+        plt.plot(binEdges_nbo[1:], h_nbo, label = 'BO-'+MType+'-NBO')
+    else:
+        print("there is no nonbridge-O-" + MType + \
+                "-nonbridge-O pair for the current cutoff.")
+
+
+    plt.legend()
     plt.savefig('adf_O_'+str(MType)+'_O.pdf')
     plt.close()
 
@@ -184,16 +314,12 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
             #print(i, MOIndex)
             for j in range(len(MOIndex)):
                 for k in range(j+1,len(MOIndex)):
-                    #if NBList[1][MOIndex[j]]==NBList[1][MOIndex[k]]:
-                    #    continue
-                    #else:
                     angles.append(atoms.get_angle(NBList[1][MOIndex[j]],\
                                                   i,\
                                                   NBList[1][MOIndex[k]],\
                                                   mic=True))
                     #print(angles[-1], NBList[1][MOIndex[j]],\
                     #      i, NBList[1][MOIndex[k]])
-    edges = np.arange(0.0, 180.0, dr)
     h, binEdges = np.histogram(angles, edges)
     plt.plot(binEdges[1:], h)
     plt.savefig('adf_'+str(MType)+'_O_'+str(MType)+'.pdf')
@@ -241,202 +367,6 @@ def get_BOList(listTypeName, listTypeNum, atoms, cutoff):
     NBOList = list(set(OList) - set(BOList))
     return(BOList, NBOList)
 
-def get_adf_BO_M_BO(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
-                    dr = 1.0):
-    #get index of element types of interest
-    typeIndex=[]
-    for j in range(len(listTypeName)):
-        if MType == listTypeName[j]:
-            typeIndex.append(j)
-    MTypeStart = 0
-    MTypeEnd = 0
-    for i in range(len(listTypeNum)):
-        if i < typeIndex[0]:
-            MTypeStart += listTypeNum[i]
-    MTypeEnd = MTypeStart + listTypeNum[typeIndex[0]]
-    print(MType, MTypeStart, MTypeEnd)
-    #get index of oxygen 
-    OType = 'O'
-    typeIndex=[]
-    for j in range(len(listTypeName)):
-        if 'O' == listTypeName[j]:
-            typeIndex.append(j)
-    OTypeStart = 0
-    OTypeEnd = 0
-    for i in range(len(listTypeNum)):
-        if i < typeIndex[0]:
-            OTypeStart += listTypeNum[i]
-    OTypeEnd = OTypeStart + listTypeNum[typeIndex[0]]
-    print(OType, OTypeStart, OTypeEnd)
-
-    NBList = neighborlist.neighbor_list('ijDd', atoms, cutoff)
-    nnn = np.bincount(NBList[0]) #number of nearesr neighbors
-
-    #BOIndexList = ((nnn[OTypeStart:OTypeEnd] >= 2)).nonzero()[0]
-    BOIndexList = get_BOList(listTypeName, listTypeNum, atoms, cutoff)[0]
-    print("BO index list:")
-    print(BOIndexList)
-    # M as i
-    MIndexList = ((NBList[0] >= MTypeStart) &\
-                  (NBList[0] < MTypeEnd)).nonzero()[0]
-    # O as j
-    OIndexList = ((NBList[1] >= OTypeStart) &\
-                  (NBList[1] < OTypeEnd)).nonzero()[0]
-    angles = []
-    #print("1nd index: ")
-    #print(NBList[0])
-    #print("2nd index: ")
-    #print(NBList[1])
-    for i in range(MTypeStart, MTypeEnd):
-        MOIndex = []
-        if nnn[i] < 2:
-            continue
-        else:
-            MOIndex = ((NBList[0] == i) & (NBList[1] < OTypeEnd) &\
-                       (NBList[1] >= OTypeStart)).nonzero()[0]
-            MBOIndex = []
-            for j in range(len(MOIndex)):
-                if not (NBList[1][MOIndex[j]] in BOIndexList) : 
-                    MBOIndex=np.delete(MOIndex, j)
-            if (len(MBOIndex) == 0):
-                continue
-            else:
-                #print("i, MBOIndex")
-                #print(i, MBOIndex)
-                for j in range(len(MBOIndex)):
-                    for k in range(j+1,len(MBOIndex)):
-                        angles.append(atoms.get_angle(NBList[1][MBOIndex[j]],\
-                                                      i,\
-                                                      NBList[1][MBOIndex[k]],\
-                                                      mic=True))
-                        #print(angles[-1], NBList[1][MBOIndex[j]],\
-                        #      i, NBList[1][MBOIndex[k]])
-    if not(len(angles) == 0):
-        edges = np.arange(0.0, 180.0, dr)
-        h, binEdges = np.histogram(angles, edges)
-        plt.plot(binEdges[1:], h)
-        plt.savefig('adf_BO_'+str(MType)+'_BO.pdf')
-        plt.close()
-    else:
-        print("There is no bridge-O-" + MType + \
-                "-bridge-O pair for the current cutoff.")
-
-    angles = []
-    for i in range(OTypeStart, OTypeEnd):
-        MOIndex = []
-        if nnn[i] < 2:
-            continue
-        else:
-            MOIndex = ((NBList[0] == i) & (NBList[1] < MTypeEnd) &\
-                       (NBList[1] >= MTypeStart)).nonzero()[0]
-            MBOIndex = []
-            for j in range(len(MOIndex)):
-                if not (NBList[0][MOIndex[j]] in BOIndexList) : 
-                    MBOIndex=np.delete(MOIndex, j)
-            if (len(MBOIndex) == 0):
-                continue
-            else:
-                #print("i, MBOIndex")
-                #print(i, MBOIndex)
-                for j in range(len(MBOIndex)):
-                    for k in range(j+1,len(MBOIndex)):
-                        angles.append(atoms.get_angle(NBList[1][MBOIndex[j]],\
-                                                      i,\
-                                                      NBList[1][MBOIndex[k]],\
-                                                      mic=True))
-                        #print(angles[-1], NBList[1][MBOIndex[j]],\
-                        #      i, NBList[1][MBOIndex[k]])
-    if not(len(angles) == 0):
-        edges = np.arange(0.0, 180.0, dr)
-        h, binEdges = np.histogram(angles, edges)
-        plt.plot(binEdges[1:], h)
-        plt.savefig('adf'+str(MType)+'_BO_'+str(MType)+'.pdf')
-        plt.close()
-    else:
-        print("There is no " + MType + "-bridge-O-" + MType + \
-                " for the current cutoff.")
-    return
-
-def get_adf_NBO_M_NBO(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
-                    dr = 1.0):
-    #get index of element types of interest
-    typeIndex=[]
-    for j in range(len(listTypeName)):
-        if MType == listTypeName[j]:
-            typeIndex.append(j)
-    MTypeStart = 0
-    MTypeEnd = 0
-    for i in range(len(listTypeNum)):
-        if i < typeIndex[0]:
-            MTypeStart += listTypeNum[i]
-    MTypeEnd = MTypeStart + listTypeNum[typeIndex[0]]
-    #get index of oxygen 
-    OType = 'O'
-    typeIndex=[]
-    for j in range(len(listTypeName)):
-        if 'O' == listTypeName[j]:
-            typeIndex.append(j)
-    OTypeStart = 0
-    OTypeEnd = 0
-    for i in range(len(listTypeNum)):
-        if i < typeIndex[0]:
-            OTypeStart += listTypeNum[i]
-    OTypeEnd = OTypeStart + listTypeNum[typeIndex[0]]
-
-    NBList = neighborlist.neighbor_list('ijDd', atoms, cutoff)
-    nnn = np.bincount(NBList[0]) #number of nearesr neighbors
-    #NBOIndexList = ((nnn[OTypeStart:OTypeEnd] < 2)).nonzero()[0]
-    NBOIndexList = get_BOList(listTypeName, listTypeNum, atoms, cutoff)[1]
-    print("NBO index list:")
-    print(NBOIndexList)
-    # M as i
-    MIndexList = ((NBList[0] >= MTypeStart) &\
-                  (NBList[0] < MTypeEnd)).nonzero()[0]
-    # O as j
-    OIndexList = ((NBList[1] >= OTypeStart) &\
-                  (NBList[1] < OTypeEnd)).nonzero()[0]
-    angles = []
-    #print("1nd index: ")
-    #print(NBList[0])
-    #print("2nd index: ")
-    #print(NBList[1])
-    for i in range(MTypeStart, MTypeEnd):
-        MOIndex = []
-        if nnn[i] < 2:
-            continue
-        else:
-            MOIndex = ((NBList[0] == i) & (NBList[1] < OTypeEnd) &\
-                       (NBList[1] >= OTypeStart)).nonzero()[0]
-            MNBOIndex = []
-            for j in range(len(MOIndex)):
-                if not (NBList[1][MOIndex[j]] in NBOIndexList) : 
-                    MNBOIndex = np.delete(MOIndex, j)
-            if (len(MNBOIndex) == 0):
-                continue
-            else:
-                #print("i, MNBOIndex")
-                #print(i, MNBOIndex)
-                for j in range(len(MNBOIndex)):
-                    for k in range(j+1,len(MNBOIndex)):
-                        angles.append(atoms.get_angle(NBList[1][MNBOIndex[j]],\
-                                      i,\
-                                      NBList[1][MNBOIndex[k]],\
-                                      mic=True))
-                        #print(angles[-1], NBList[1][MNBOIndex[j]],\
-                        #      i, NBList[1][MNBOIndex[k]])
-    if not(len(angles) == 0):
-        edges = np.arange(0.0, 180.0, dr)
-        h, binEdges = np.histogram(angles, edges)
-        plt.plot(binEdges[1:], h)
-        plt.savefig('adf_NBO_'+str(MType)+'_NBO.pdf')
-        plt.close()
-    else:
-        print("there is no nonbridge-O-" + MType + \
-                "-nonbridge-O pair for the current cutoff.")
-    return
-
-
-
 def processAll(inFile, dr = 2.0):
     print("working on: %s" % inFile)
     with open(inFile,'r') as fin:
@@ -451,17 +381,9 @@ def processAll(inFile, dr = 2.0):
     cutoff = get_rdf_A_B(types, atoms, listTypeName, listTypeNum, rMax)
     #cutoff = 1.65 #test only
     get_adf_O_M_O(types[0], atoms, listTypeName, listTypeNum, rMax, cutoff, dr)
-    get_adf_BO_M_BO(types[0], atoms, listTypeName, listTypeNum, rMax, cutoff,\
-                    dr)
-    get_adf_NBO_M_NBO(types[0], atoms, listTypeName, listTypeNum, rMax, cutoff,\
-                      dr)
-    #types = ['Mg','O']
-    #cutoff =get_rdf_A_B(types, atoms, listTypeName, listTypeNum, rMax)
-    #get_adf_O_M_O(types[0], atoms, listTypeName, listTypeNum, rMax, cutoff, dr)
-    #get_adf_BO_M_BO(types[0], atoms, listTypeName, listTypeNum, rMax, cutoff,\
-    #                dr)
-    #get_adf_NBO_M_NBO(types[0], atoms, listTypeName, listTypeNum, rMax, cutoff,\
-    #                  dr)
+    types = ['Mg','O']
+    cutoff =get_rdf_A_B(types, atoms, listTypeName, listTypeNum, rMax)
+    get_adf_O_M_O(types[0], atoms, listTypeName, listTypeNum, rMax, cutoff, dr)
     return
 
 inFile = 'amor.vasp'
