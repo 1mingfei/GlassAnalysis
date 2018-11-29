@@ -88,7 +88,7 @@ def get_rdf_A_B(types, atoms, listTypeName, listTypeNum, rMax, nBins = 200):
     print("first peak of rdf: %12.8f" % firstPeak)
     #print("second peak of rdf: %12.8f" % secondPeak)
     #cutoff = (firstPeak + secondPeak)/2.0
-    cutoff = firstPeak*1.25
+    cutoff = firstPeak*1.2
     print("first NN cutoff set to: %12.8f" % cutoff)
 
     #calculate CN
@@ -200,6 +200,47 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
     plt.close()
     return
 
+def get_BOList(listTypeName, listTypeNum, atoms, cutoff):
+    NBList = neighborlist.neighbor_list('ijDd', atoms, cutoff)
+    nnn = np.bincount(NBList[0]) #number of nearesr neighbors
+    MType = 'Si'
+    typeIndex=[]
+    for j in range(len(listTypeName)):
+        if MType == listTypeName[j]:
+            typeIndex.append(j)
+    MTypeStart = 0
+    MTypeEnd = 0
+    for i in range(len(listTypeNum)):
+        if i < typeIndex[0]:
+            MTypeStart += listTypeNum[i]
+    MTypeEnd = MTypeStart + listTypeNum[typeIndex[0]]
+    OType = 'O'
+    typeIndex=[]
+    for j in range(len(listTypeName)):
+        if 'O' == listTypeName[j]:
+            typeIndex.append(j)
+    OTypeStart = 0
+    OTypeEnd = 0
+    for i in range(len(listTypeNum)):
+        if i < typeIndex[0]:
+            OTypeStart += listTypeNum[i]
+    OTypeEnd = OTypeStart + listTypeNum[typeIndex[0]]
+    OList = np.arange(OTypeStart, OTypeEnd)
+    OIndexList = ((NBList[1] >= OTypeStart) &\
+                  (NBList[1] < OTypeEnd)).nonzero()[0]
+    BOList = []
+    for i in OList:
+        if nnn[i] >=2:
+            currentIndex = (NBList[0] == i).nonzero()[0]
+            count = 0
+            for j in (currentIndex):
+                if (NBList[1][j] >= MTypeStart) and (NBList[1][j] < MTypeEnd):
+                    count += 1;
+            if count == 2:
+                BOList.append(i)
+    NBOList = list(set(OList) - set(BOList))
+    return(BOList, NBOList)
+
 def get_adf_BO_M_BO(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
                     dr = 1.0):
     #get index of element types of interest
@@ -230,7 +271,9 @@ def get_adf_BO_M_BO(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
 
     NBList = neighborlist.neighbor_list('ijDd', atoms, cutoff)
     nnn = np.bincount(NBList[0]) #number of nearesr neighbors
-    BOIndexList = ((nnn[OTypeStart:OTypeEnd] >= 2)).nonzero()[0]
+
+    #BOIndexList = ((nnn[OTypeStart:OTypeEnd] >= 2)).nonzero()[0]
+    BOIndexList = get_BOList(listTypeName, listTypeNum, atoms, cutoff)[0]
     print("BO index list:")
     print(BOIndexList)
     # M as i
@@ -342,7 +385,8 @@ def get_adf_NBO_M_NBO(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
 
     NBList = neighborlist.neighbor_list('ijDd', atoms, cutoff)
     nnn = np.bincount(NBList[0]) #number of nearesr neighbors
-    NBOIndexList = ((nnn[OTypeStart:OTypeEnd] < 2)).nonzero()[0]
+    #NBOIndexList = ((nnn[OTypeStart:OTypeEnd] < 2)).nonzero()[0]
+    NBOIndexList = get_BOList(listTypeName, listTypeNum, atoms, cutoff)[1]
     print("NBO index list:")
     print(NBOIndexList)
     # M as i
@@ -400,6 +444,7 @@ def processAll(inFile, dr = 2.0):
         listTypeName=[str(s) for s in lines[5].split()]
         listTypeNum=[int(s) for s in lines[6].split()]
     atoms = read(inFile)
+    #get_BOList(listTypeName, listTypeNum, atoms, 2.0)
     rMax = 10.0
     cutoff = get_rdf_all(atoms, rMax) 
     types = ['Si','O']
@@ -410,13 +455,13 @@ def processAll(inFile, dr = 2.0):
                     dr)
     get_adf_NBO_M_NBO(types[0], atoms, listTypeName, listTypeNum, rMax, cutoff,\
                       dr)
-    types = ['Mg','O']
-    cutoff =get_rdf_A_B(types, atoms, listTypeName, listTypeNum, rMax)
-    get_adf_O_M_O(types[0], atoms, listTypeName, listTypeNum, rMax, cutoff, dr)
-    get_adf_BO_M_BO(types[0], atoms, listTypeName, listTypeNum, rMax, cutoff,\
-                    dr)
-    get_adf_NBO_M_NBO(types[0], atoms, listTypeName, listTypeNum, rMax, cutoff,\
-                      dr)
+    #types = ['Mg','O']
+    #cutoff =get_rdf_A_B(types, atoms, listTypeName, listTypeNum, rMax)
+    #get_adf_O_M_O(types[0], atoms, listTypeName, listTypeNum, rMax, cutoff, dr)
+    #get_adf_BO_M_BO(types[0], atoms, listTypeName, listTypeNum, rMax, cutoff,\
+    #                dr)
+    #get_adf_NBO_M_NBO(types[0], atoms, listTypeName, listTypeNum, rMax, cutoff,\
+    #                  dr)
     return
 
 inFile = 'amor.vasp'
