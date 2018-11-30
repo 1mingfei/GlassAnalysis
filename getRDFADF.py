@@ -36,11 +36,170 @@ def get_rdf_all(atoms, rMax, nBins = 200):
     print("first NN cutoff set to: %12.8f" % cutoff)
     return(cutoff)
 
-def get_NL(atoms, cutoff):
-    #get neighbor list
-    NBList = neighborlist.neighbor_list('ijDd', atoms, cutoff)
+def get_rdf_M_O(MType, atoms, listTypeName, listTypeNum, rMax, nBins = 200):
+    #get index of element types of interest
+    typeIndex=[]
+    for j in range(len(listTypeName)):
+        if MType == listTypeName[j]:
+            typeIndex.append(j)
+    MTypeStart = 0
+    MTypeEnd = 0
+    for i in range(len(listTypeNum)):
+        if i < typeIndex[0]:
+            MTypeStart += listTypeNum[i]
+    MTypeEnd = MTypeStart + listTypeNum[typeIndex[0]]
+    #print(MType, MTypeStart, MTypeEnd)
+    
+    OType = 'O'
+    typeIndex=[]
+    for j in range(len(listTypeName)):
+        if 'O' == listTypeName[j]:
+            typeIndex.append(j)
+    OTypeStart = 0
+    OTypeEnd = 0
+    for i in range(len(listTypeNum)):
+        if i < typeIndex[0]:
+            OTypeStart += listTypeNum[i]
+    OTypeEnd = OTypeStart + listTypeNum[typeIndex[0]]
+    #print(OType, OTypeStart, OTypeEnd)
+
+    atoms_M = atoms[MTypeStart:MTypeEnd]
+    atoms_O = atoms[OTypeStart:OTypeEnd]
+    atoms_new = atoms_M + atoms_O
+    d = neighborlist.neighbor_list('d', atoms_new, rMax)
+    dr = rMax/nBins
+    edges = np.arange(0., rMax + 1.1 * dr, dr)
+    h, binEdges = np.histogram(d, edges)
+    rho = len(atoms_new) / atoms.get_volume() 
+    factor = 4. / 3. * np.pi * rho * len(atoms_new)
+    rdf = h / (factor * (binEdges[1:]**3 - binEdges[:-1]**3)) 
+
+    plt.plot(binEdges[1:], rdf)
+    plt.savefig('rdf_' + MType + '_O.pdf')
+    plt.close()
+
+    peaks = (np.diff(np.sign(np.diff(rdf))) < 0).nonzero()[0] + 1 # local max
+    firstPeakInd = np.argmax(rdf[peaks])
+    firstPeak = binEdges[peaks[firstPeakInd]]
+    #peaks_2 = np.delete(peaks, firstPeakInd)
+    #secondPeakInd = np.argmax(rdf[peaks_2])
+    #secondPeak = binEdges[peaks_2[secondPeakInd]]
+    print("first peak of rdf: %12.8f" % firstPeak)
+    #print("second peak of rdf: %12.8f" % secondPeak)
+    #cutoff = (firstPeak + secondPeak)/2.0
+    cutoff = firstPeak * 1.25
+    print("first NN cutoff set to: %12.8f" % cutoff)
+
+    #calculate CN
+    NBList = neighborlist.neighbor_list('ij', atoms_new, cutoff)
+    d = neighborlist.neighbor_list('d', atoms_new, cutoff)
     nnn = np.bincount(NBList[0]) #number of nearesr neighbors
-    return(nnn, NBList[0], NBList[1], NBList[2], NBList[3])
+    typeM_CN = np.mean(nnn[:len(atoms_M)])
+    typeO_CN = np.mean(nnn[len(atoms_M):])
+
+    print("CN of %s : %8.6f" % (MType, typeM_CN))
+    print("CN of %s : %8.6f" % ('O', typeO_CN))
+    aveBondD = np.mean(d)
+    stdBondD = np.std(d)
+    print("averaged bond distance : %12.8f" % aveBondD)
+    print("bond distance std : %12.8f" % stdBondD)
+    BOIndexList, NBOIndexList  = get_BOList(listTypeName, listTypeNum, atoms,\
+                                            cutoff)[0],\
+                                 get_BOList(listTypeName, listTypeNum, atoms,\
+                                            cutoff)[1]
+    #M-BO bond distance
+    print("%s and bridge O bond distribution" % MType)
+    print("number of bridge O within cutoff(%12.8fA): %d"%(cutoff, len(BOIndexList)))
+    print("number of nonbridge O within cutoff(%12.8fA): %d"%(cutoff, len(NBOIndexList)))
+    atoms_new = atoms_M
+    MLength = len(atoms_M)
+    for i in (BOIndexList):
+        atoms_new += atoms[i]
+    d = neighborlist.neighbor_list('d', atoms_new, rMax)
+    dr = rMax/nBins
+    edges = np.arange(0., rMax + 1.1 *dr, dr)
+    h, binEdges = np.histogram(d, edges)
+    rho = len(atoms_new) / atoms.get_volume()
+    factor = 4./3. * np.pi * rho * len(atoms_new)
+    rdf = h / (factor * (binEdges[1:]**3 - binEdges[:-1]**3))
+
+    plt.plot(binEdges[1:], rdf)
+    plt.savefig('rdf_'+MType+'_BO.pdf')
+    plt.close()
+
+    peaks = (np.diff(np.sign(np.diff(rdf))) < 0).nonzero()[0] + 1 # local max
+    firstPeakInd = np.argmax(rdf[peaks])
+    firstPeak = binEdges[peaks[firstPeakInd]]
+    #peaks_2 = np.delete(peaks, firstPeakInd)
+    #secondPeakInd = np.argmax(rdf[peaks_2])
+    #secondPeak = binEdges[peaks_2[secondPeakInd]]
+    print("first peak of rdf: %12.8f" % firstPeak)
+    #print("second peak of rdf: %12.8f" % secondPeak)
+    #cutoff = (firstPeak + secondPeak)/2.0
+    cutoff_BO = firstPeak*1.25
+    print("first NN cutoff set to: %12.8f" % cutoff)
+
+    #calculate CN
+    NBList = neighborlist.neighbor_list('ij', atoms_new, cutoff)
+    d = neighborlist.neighbor_list('d', atoms_new, cutoff_BO)
+    nnn = np.bincount(NBList[0]) #number of nearesr neighbors
+    typeM_CN = np.mean(nnn[:MLength])
+    typeO_CN = np.mean(nnn[MLength:])
+
+    print("CN of %s : %8.6f" % (MType, typeM_CN))
+    print("CN of %s : %8.6f" % ('BO', typeO_CN))
+    aveBondD = np.mean(d)
+    stdBondD = np.std(d)
+    print("averaged bond distance : %8.6f" % aveBondD)
+    print("bond distance std : %8.6f" % stdBondD)
+
+    #M-NBO bond distance
+    print("%s and non bridge O bond distribution" % MType)
+    atoms_new = atoms_M
+    MLength = len(atoms_M)
+    for i in (NBOIndexList):
+        atoms_new += atoms[i]
+    d = neighborlist.neighbor_list('d', atoms_new, rMax)
+    dr = rMax/nBins
+    edges = np.arange(0., rMax + 1.1 *dr, dr)
+    h, binEdges = np.histogram(d, edges)
+    rho = len(atoms_new) / atoms.get_volume()
+    factor = 4./3. * np.pi * rho * len(atoms_new)
+    rdf = h / (factor * (binEdges[1:]**3 - binEdges[:-1]**3))
+
+    plt.plot(binEdges[1:], rdf)
+    plt.savefig('rdf_'+MType+'_NBO.pdf')
+    plt.close()
+
+    peaks = (np.diff(np.sign(np.diff(rdf))) < 0).nonzero()[0] + 1 # local max
+    firstPeakInd = np.argmax(rdf[peaks])
+    firstPeak = binEdges[peaks[firstPeakInd]]
+    #peaks_2 = np.delete(peaks, firstPeakInd)
+    #secondPeakInd = np.argmax(rdf[peaks_2])
+    #secondPeak = binEdges[peaks_2[secondPeakInd]]
+    print("first peak of rdf: %12.8f" % firstPeak)
+    #print("second peak of rdf: %12.8f" % secondPeak)
+    #cutoff = (firstPeak + secondPeak)/2.0
+    cutoff_NBO = firstPeak*1.25
+    print("first NN cutoff set to: %12.8f" % cutoff)
+
+    #calculate CN
+    NBList = neighborlist.neighbor_list('ij', atoms_new, cutoff_NBO)
+    d = neighborlist.neighbor_list('d', atoms_new, cutoff_NBO)
+    nnn = np.bincount(NBList[0]) #number of nearesr neighbors
+
+    typeM_CN = np.mean(nnn[:MLength])
+    typeO_CN = np.mean(nnn[MLength:])
+
+
+    print("CN of %s : %8.6f" % (MType, typeM_CN))
+    print("CN of %s : %8.6f" % ('NBO', typeO_CN))
+    aveBondD = np.mean(d)
+    stdBondD = np.std(d)
+    print("averaged bond distance : %8.6f" % aveBondD)
+    print("bond distance std : %8.6f" % stdBondD)
+    return(cutoff, cutoff_BO, cutoff_NBO)
+
 
 def get_rdf_A_B(types, atoms, listTypeName, listTypeNum, rMax, nBins = 200):
     #get index of element types of interest
@@ -377,13 +536,15 @@ def processAll(inFile, dr = 2.0):
     #get_BOList(listTypeName, listTypeNum, atoms, 2.0)
     rMax = 10.0
     cutoff = get_rdf_all(atoms, rMax) 
-    types = ['Si','O']
-    cutoff = get_rdf_A_B(types, atoms, listTypeName, listTypeNum, rMax)
+    #types = ['Si','O']
+    #cutoff = get_rdf_A_B(types, atoms, listTypeName, listTypeNum, rMax)
+    cutoff = get_rdf_M_O('Si', atoms, listTypeName, listTypeNum, rMax)[0]
     #cutoff = 1.65 #test only
-    get_adf_O_M_O(types[0], atoms, listTypeName, listTypeNum, rMax, cutoff, dr)
-    types = ['Mg','O']
-    cutoff =get_rdf_A_B(types, atoms, listTypeName, listTypeNum, rMax)
-    get_adf_O_M_O(types[0], atoms, listTypeName, listTypeNum, rMax, cutoff, dr)
+    get_adf_O_M_O('Si', atoms, listTypeName, listTypeNum, rMax, cutoff, dr)
+    #types = ['Mg','O']
+    #cutoff =get_rdf_A_B(types, atoms, listTypeName, listTypeNum, rMax)
+    cutoff = get_rdf_M_O('Mg', atoms, listTypeName, listTypeNum, rMax)[0]
+    get_adf_O_M_O('Mg', atoms, listTypeName, listTypeNum, rMax, cutoff, dr)
     return
 
 inFile = 'amor.vasp'
