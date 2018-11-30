@@ -1,3 +1,4 @@
+#!/usr/bin/env pythonw
 '''
 Program header:
     Mingfei Zhang
@@ -7,6 +8,8 @@ python3 code
 need to install ase first
 
 '''
+import os
+import sys
 import numpy as np
 from ase.io import read
 from ase import neighborlist, geometry
@@ -23,7 +26,7 @@ def get_rdf_all(atoms, rMax, nBins = 200):
     rdf = h / (factor * (binEdges[1:]**3 - binEdges[:-1]**3)) 
 
     plt.plot(binEdges[1:], rdf)
-    plt.savefig('rdfAll.pdf')
+    plt.savefig('RDFADF/rdfAll.pdf')
     plt.close()
     peaks = (np.diff(np.sign(np.diff(rdf))) < 0).nonzero()[0] + 1 # local max
     firstPeakInd = np.argmax(rdf[peaks])
@@ -75,7 +78,7 @@ def get_rdf_M_O(MType, atoms, listTypeName, listTypeNum, rMax, nBins = 200):
     rdf = h / (factor * (binEdges[1:]**3 - binEdges[:-1]**3)) 
 
     plt.plot(binEdges[1:], rdf)
-    plt.savefig('rdf_' + MType + '_O.pdf')
+    plt.savefig('RDFADF/rdf_' + MType + '_O.pdf')
     plt.close()
 
     peaks = (np.diff(np.sign(np.diff(rdf))) < 0).nonzero()[0] + 1 # local max
@@ -124,7 +127,7 @@ def get_rdf_M_O(MType, atoms, listTypeName, listTypeNum, rMax, nBins = 200):
     rdf = h / (factor * (binEdges[1:]**3 - binEdges[:-1]**3))
 
     plt.plot(binEdges[1:], rdf)
-    plt.savefig('rdf_'+MType+'_BO.pdf')
+    plt.savefig('RDFADF/rdf_'+MType+'_BO.pdf')
     plt.close()
 
     peaks = (np.diff(np.sign(np.diff(rdf))) < 0).nonzero()[0] + 1 # local max
@@ -169,7 +172,7 @@ def get_rdf_M_O(MType, atoms, listTypeName, listTypeNum, rMax, nBins = 200):
     rdf = h / (factor * (binEdges[1:]**3 - binEdges[:-1]**3))
 
     plt.plot(binEdges[1:], rdf)
-    plt.savefig('rdf_'+MType+'_NBO.pdf')
+    plt.savefig('RDFADF/rdf_'+MType+'_NBO.pdf')
     plt.close()
 
     peaks = (np.diff(np.sign(np.diff(rdf))) < 0).nonzero()[0] + 1 # local max
@@ -236,7 +239,7 @@ def get_rdf_A_B(types, atoms, listTypeName, listTypeNum, rMax, nBins = 200):
     rdf = h / (factor * (binEdges[1:]**3 - binEdges[:-1]**3)) 
 
     plt.plot(binEdges[1:], rdf)
-    plt.savefig('rdf_'+types[0]+'_'+types[1]+'.pdf')
+    plt.savefig('RDFADF/rdf_'+types[0]+'_'+types[1]+'.pdf')
     plt.close()
 
     peaks = (np.diff(np.sign(np.diff(rdf))) < 0).nonzero()[0] + 1 # local max
@@ -415,7 +418,7 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
     #print(NBList[1])
     #print(BOIndexList)
     #print(NBOIndexList)
-    for i in range(MTypeStart, MTypeEnd):
+    for i in BOIndexList:
         MOIndex = []
         if nnn[i] < 2:
             continue
@@ -458,7 +461,7 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
 
 
     plt.legend()
-    plt.savefig('adf_O_'+str(MType)+'_O.pdf')
+    plt.savefig('RDFADF/adf_O_'+str(MType)+'_O.pdf')
     plt.close()
 
     #M-O-M
@@ -482,8 +485,29 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
                     #      i, NBList[1][MOIndex[k]])
     h, binEdges = np.histogram(angles, edges)
     plt.plot(binEdges[1:], h)
-    plt.savefig('adf_'+str(MType)+'_O_'+str(MType)+'.pdf')
+    plt.savefig('RDFADF/adf_'+str(MType)+'_O_'+str(MType)+'.pdf')
     plt.close()
+
+    #M-BO-M
+    angles = []
+    for i in range(OTypeStart, OTypeEnd):
+        MOIndex = []
+        if nnn[i] < 2:
+            continue
+        else:
+            MOIndex = ((NBList[0] == i) & (NBList[1] < MTypeEnd) &\
+                       (NBList[1] >= MTypeStart)).nonzero()[0]
+            for j in range(len(MOIndex)):
+                for k in range(j+1,len(MOIndex)):
+                    angles.append(atoms.get_angle(NBList[1][MOIndex[j]],\
+                                                  i,\
+                                                  NBList[1][MOIndex[k]],\
+                                                  mic=True))
+    h, binEdges = np.histogram(angles, edges)
+    plt.plot(binEdges[1:], h)
+    plt.savefig('RDFADF/adf_'+str(MType)+'_BO_'+str(MType)+'.pdf')
+    plt.close()
+
     return
 
 def get_BOList(listTypeName, listTypeNum, atoms, cutoff):
@@ -537,18 +561,19 @@ def processAll(inFile, dr = 1.0):
     #get_BOList(listTypeName, listTypeNum, atoms, 2.0)
     rMax = 10.0
     cutoff = get_rdf_all(atoms, rMax) 
-    #types = ['Si','O']
-    #cutoff = get_rdf_A_B(types, atoms, listTypeName, listTypeNum, rMax)
     cutoff = get_rdf_M_O('Si', atoms, listTypeName, listTypeNum, rMax)[0]
     #cutoff = 1.65 #test only
     get_adf_O_M_O('Si', atoms, listTypeName, listTypeNum, rMax, cutoff, dr)
-    #types = ['Mg','O']
-    #cutoff =get_rdf_A_B(types, atoms, listTypeName, listTypeNum, rMax)
-    cutoff = get_rdf_M_O('Mg', atoms, listTypeName, listTypeNum, rMax)[0]
-    get_adf_O_M_O('Mg', atoms, listTypeName, listTypeNum, rMax, cutoff, dr)
+    #cutoff = get_rdf_M_O('Mg', atoms, listTypeName, listTypeNum, rMax)[0]
+    #get_adf_O_M_O('Mg', atoms, listTypeName, listTypeNum, rMax, cutoff, dr)
     return
 
-inFile = 'amor.vasp'
-#inFile = 'SiO2_c_NBO.vasp'  #test only
-processAll(inFile)
+if __name__ == "__main__":
+    if (len(sys.argv) != 2):
+        print("usage:\ngetRDFADF.py <vasp5 formate file name>\n")
+    else:
+        os.mkdir('RDFADF')
+        inFile = sys.argv[1]
+        #inFile = 'SiO2_c_NBO.vasp'  #test only
+        processAll(inFile)
 
