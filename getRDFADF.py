@@ -155,6 +155,7 @@ def get_rdf_M_O(MType, atoms, listTypeName, listTypeNum, rMax, nBins = 200):
 
     #M-NBO bond distance
     print("%s and non bridge O bond distribution" % MType)
+    atoms_M = atoms[MTypeStart:MTypeEnd]
     atoms_new = atoms_M
     MLength = len(atoms_M)
     for i in (NBOIndexList):
@@ -526,7 +527,7 @@ def get_BOList(listTypeName, listTypeNum, atoms, cutoff):
     NBOList = list(set(OList) - set(BOList))
     return(BOList, NBOList)
 
-def processAll(inFile, dr = 2.0):
+def processAll(inFile, dr = 1.0):
     print("working on: %s" % inFile)
     with open(inFile,'r') as fin:
         lines=fin.readlines()
