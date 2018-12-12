@@ -67,14 +67,29 @@ def get_rdf_M_O(MType, atoms, listTypeName, listTypeNum, rMax, nBins = 200):
     #print(OType, OTypeStart, OTypeEnd)
 
     atoms_M = atoms[MTypeStart:MTypeEnd]
+    MLength = len(atoms_M)
     atoms_O = atoms[OTypeStart:OTypeEnd]
     atoms_new = atoms_M + atoms_O
-    d = neighborlist.neighbor_list('d', atoms_new, rMax)
+    listA, listB, d = neighborlist.neighbor_list('ijd', atoms_new, rMax)
+    listMBO_indexM=set()
+    listMBO_indexO=set()
+    d_MO = []
+    for i in range(len(d)):
+        if ((listA[i] < MLength) \
+            and (listB[i] >= MLength)):
+            d_MO.append(d[i])
+            listMBO_indexM.add(listA[i])
+            listMBO_indexO.add(listB[i])
     dr = rMax/nBins
     edges = np.arange(0., rMax + 1.1 * dr, dr)
-    h, binEdges = np.histogram(d, edges)
-    rho = len(atoms_new) / atoms.get_volume() 
-    factor = 4. / 3. * np.pi * rho * len(atoms_new)
+    h, binEdges = np.histogram(d_MO, edges)
+    #rho = len(atoms_new) / atoms.get_volume() 
+    #factor = 4. / 3. * np.pi * rho * len(atoms_new)
+
+    rho = 0.5*(len(listMBO_indexM)+len(listMBO_indexO)) / atoms.get_volume()
+    factor = 4./3. * np.pi * rho * 0.5*(len(listMBO_indexM)+len(listMBO_indexO))
+
+
     rdf = h / (factor * (binEdges[1:]**3 - binEdges[:-1]**3)) 
 
     plt.plot(binEdges[1:], rdf)
@@ -123,8 +138,8 @@ def get_rdf_M_O(MType, atoms, listTypeName, listTypeNum, rMax, nBins = 200):
     listMBO_indexO=set()
     d_MO = []
     for i in range(len(d)):
-        if ((listA[i] >= MTypeStart) and (listA[i] < MTypeEnd) \
-            and (listB[i] >= OTypeStart) and (listB[i] < OTypeEnd)):
+        if ((listA[i] < MLength) \
+            and (listB[i] >= MLength)):
             d_MO.append(d[i])
             listMBO_indexM.add(listA[i])
             listMBO_indexO.add(listB[i])
@@ -134,10 +149,8 @@ def get_rdf_M_O(MType, atoms, listTypeName, listTypeNum, rMax, nBins = 200):
     h, binEdges = np.histogram(d_MO, edges)
     #rho = len(atoms_new) / atoms.get_volume()
     #factor = 4./3. * np.pi * rho * len(atoms_new)
-    
-    #0.5 takes care of double counting
-    rho = 0.5 * (len(listMBO_indexM)+len(listMBO_indexM)) / atoms.get_volume()
-    factor = 4./3. * np.pi * rho * ((len(listMBO_indexM)+len(listMBO_indexM)))
+    rho = 0.5*(len(listMBO_indexM)+len(listMBO_indexO)) / atoms.get_volume()
+    factor = 4./3. * np.pi * rho * 0.5*(len(listMBO_indexM)+len(listMBO_indexO))
 
     rdf = h / (factor * (binEdges[1:]**3 - binEdges[:-1]**3))
 
@@ -178,12 +191,26 @@ def get_rdf_M_O(MType, atoms, listTypeName, listTypeNum, rMax, nBins = 200):
     MLength = len(atoms_M)
     for i in (NBOIndexList):
         atoms_new += atoms[i]
-    d = neighborlist.neighbor_list('d', atoms_new, rMax)
+    #d = neighborlist.neighbor_list('d', atoms_new, rMax)
+
+    listA, listB, d = neighborlist.neighbor_list('ijd', atoms_new, rMax)
+    listMNBO_indexM=set()
+    listMNBO_indexO=set()
+    d_MNO = []
+    for i in range(len(d)):
+        if ((listA[i] < MLength) \
+            and (listB[i] >= MLength)):
+            d_MNO.append(d[i])
+            listMNBO_indexM.add(listA[i])
+            listMNBO_indexO.add(listB[i])
+
     dr = rMax/nBins
     edges = np.arange(0., rMax + 1.1 *dr, dr)
-    h, binEdges = np.histogram(d, edges)
-    rho = len(atoms_new) / atoms.get_volume()
-    factor = 4./3. * np.pi * rho * len(atoms_new)
+    h, binEdges = np.histogram(d_MNO, edges)
+    #rho = len(atoms_new) / atoms.get_volume()
+    #factor = 4./3. * np.pi * rho * len(atoms_new)
+    rho = 0.5*(len(listMBO_indexM)+len(listMBO_indexO)) / atoms.get_volume()
+    factor = 4./3. * np.pi * rho * 0.5*(len(listMBO_indexM)+len(listMBO_indexO))
     rdf = h / (factor * (binEdges[1:]**3 - binEdges[:-1]**3))
 
     plt.plot(binEdges[1:], rdf)
@@ -579,7 +606,10 @@ def processAll(inFile, dr = 1.0):
     #get_BOList(listTypeName, listTypeNum, atoms, 2.0)
     rMax = 10.0
     cutoff = get_rdf_all(atoms, rMax) 
-    cutoff = get_rdf_M_O('Si', atoms, listTypeName, listTypeNum, rMax)[0]
+    try:
+        cutoff = get_rdf_M_O('Si', atoms, listTypeName, listTypeNum, rMax)[0]
+    except:
+        cutoff = 2.0
     #cutoff = 1.65 #test only
     get_adf_O_M_O('Si', atoms, listTypeName, listTypeNum, rMax, cutoff, dr)
     #cutoff = get_rdf_M_O('Mg', atoms, listTypeName, listTypeNum, rMax)[0]
