@@ -118,12 +118,27 @@ def get_rdf_M_O(MType, atoms, listTypeName, listTypeNum, rMax, nBins = 200):
     MLength = len(atoms_M)
     for i in (BOIndexList):
         atoms_new += atoms[i]
-    d = neighborlist.neighbor_list('d', atoms_new, rMax)
+    listA, listB, d = neighborlist.neighbor_list('ijd', atoms_new, rMax)
+    listMBO_indexM=set()
+    listMBO_indexO=set()
+    d_MO = []
+    for i in range(len(d)):
+        if ((listA[i] >= MTypeStart) and (listA[i] < MTypeEnd) \
+            and (listB[i] >= OTypeStart) and (listB[i] < OTypeEnd)):
+            d_MO.append(d[i])
+            listMBO_indexM.add(listA[i])
+            listMBO_indexO.add(listB[i])
+
     dr = rMax/nBins
     edges = np.arange(0., rMax + 1.1 *dr, dr)
-    h, binEdges = np.histogram(d, edges)
-    rho = len(atoms_new) / atoms.get_volume()
-    factor = 4./3. * np.pi * rho * len(atoms_new)
+    h, binEdges = np.histogram(d_MO, edges)
+    #rho = len(atoms_new) / atoms.get_volume()
+    #factor = 4./3. * np.pi * rho * len(atoms_new)
+    
+    #0.5 takes care of double counting
+    rho = 0.5 * (len(listMBO_indexM)+len(listMBO_indexM)) / atoms.get_volume()
+    factor = 4./3. * np.pi * rho * ((len(listMBO_indexM)+len(listMBO_indexM)))
+
     rdf = h / (factor * (binEdges[1:]**3 - binEdges[:-1]**3))
 
     plt.plot(binEdges[1:], rdf)
@@ -485,6 +500,7 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
                     #      i, NBList[1][MOIndex[k]])
     h, binEdges = np.histogram(angles, edges)
     plt.plot(binEdges[1:], h)
+
     plt.savefig('RDFADF/adf_'+str(MType)+'_O_'+str(MType)+'.pdf')
     plt.close()
 
@@ -507,6 +523,9 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
     plt.plot(binEdges[1:], h)
     plt.savefig('RDFADF/adf_'+str(MType)+'_BO_'+str(MType)+'.pdf')
     plt.close()
+    with open('RDFADF/adf_'+str(MType)+'_BO_'+str(MType)+'.txt','w') as fout:
+        for i in range(len(h)):
+            fout.write("%12.8f %12.8f\n"%(binEdges[i+1],h[i]))
 
     return
 
