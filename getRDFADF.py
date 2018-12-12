@@ -348,7 +348,7 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
                     #      i, NBList[1][MOIndex[k]])
     edges = np.arange(10.0, 180.0, dr)
     h_omo, binEdges_omo = np.histogram(angles, edges)
-    plt.plot(binEdges_omo[1:], h_omo, label = 'O-'+str(MType)+'-O')
+    plt.plot(binEdges_omo[1:], h_omo/len(angles), label = 'O-'+str(MType)+'-O')
 
     angles = []
     #print("1nd index: ")
@@ -383,7 +383,7 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
                         #      i, NBList[1][MBOIndex[k]])
     if not(len(angles) == 0):
         h_bo, binEdges_bo = np.histogram(angles, edges)
-        plt.plot(binEdges_bo[1:], h_bo, label = 'BO-'+MType+'-BO')
+        plt.plot(binEdges_bo[1:], h_bo/len(angles), label = 'BO-'+MType+'-BO')
     else:
         print("There is no bridge-O-" + MType + \
                 "-bridge-O pair for the current cutoff.")
@@ -421,7 +421,7 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
                         #      i, NBList[1][MNBOIndex[k]])
     if not(len(angles) == 0):
         h_nbo, binEdges_nbo = np.histogram(angles, edges)
-        plt.plot(binEdges_nbo[1:], h_nbo, label = 'NBO-'+MType+'-NBO')
+        plt.plot(binEdges_nbo[1:], h_nbo/len(angles), label = 'NBO-'+MType+'-NBO')
     else:
         print("there is no nonbridge-O-" + MType + \
                 "-nonbridge-O pair for the current cutoff.")
@@ -469,7 +469,7 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
                         #      i, NBList[1][MNBOIndex[k]])
     if not(len(angles) == 0):
         h_nbo, binEdges_nbo = np.histogram(angles, edges)
-        plt.plot(binEdges_nbo[1:], h_nbo, label = 'BO-'+MType+'-NBO')
+        plt.plot(binEdges_nbo[1:], h_nbo/len(angles), label = 'BO-'+MType+'-NBO')
     else:
         print("there is no nonbridge-O-" + MType + \
                 "-nonbridge-O pair for the current cutoff.")
@@ -499,7 +499,7 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
                     #print(angles[-1], NBList[1][MOIndex[j]],\
                     #      i, NBList[1][MOIndex[k]])
     h, binEdges = np.histogram(angles, edges)
-    plt.plot(binEdges[1:], h)
+    plt.plot(binEdges[1:], h/len(angles))
 
     plt.savefig('RDFADF/adf_'+str(MType)+'_O_'+str(MType)+'.pdf')
     plt.close()
@@ -520,13 +520,12 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
                                                   NBList[1][MOIndex[k]],\
                                                   mic=True))
     h, binEdges = np.histogram(angles, edges)
-    plt.plot(binEdges[1:], h)
+    plt.plot(binEdges[1:], h/len(angles))
     plt.savefig('RDFADF/adf_'+str(MType)+'_BO_'+str(MType)+'.pdf')
     plt.close()
     with open('RDFADF/adf_'+str(MType)+'_BO_'+str(MType)+'.txt','w') as fout:
         for i in range(len(h)):
-            fout.write("%12.8f %12.8f\n"%(binEdges[i+1],h[i]))
-
+            fout.write("%12.8f %12.8f\n"%(binEdges[i+1],h[i]/len(angles)))
     return
 
 def get_BOList(listTypeName, listTypeNum, atoms, cutoff):
@@ -591,7 +590,8 @@ if __name__ == "__main__":
     if (len(sys.argv) != 2):
         print("usage:\ngetRDFADF.py <vasp5 formate file name>\n")
     else:
-        os.mkdir('RDFADF')
+        if (not os.path.isdir('RDFADF')):
+            os.mkdir('RDFADF')
         inFile = sys.argv[1]
         #inFile = 'SiO2_c_NBO.vasp'  #test only
         processAll(inFile)
