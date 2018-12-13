@@ -526,8 +526,15 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
                     #print(angles[-1], NBList[1][MOIndex[j]],\
                     #      i, NBList[1][MOIndex[k]])
     h, binEdges = np.histogram(angles, edges)
-    plt.plot(binEdges[1:], h/len(angles))
 
+    firstMmt=getDistMoment(binEdges[1:], h/len(angles), 1, 0.0)
+    secondMmt=getDistMoment(binEdges[1:], h/len(angles), 2, firstMmt)
+    print("M-O-M angular distribution function:")
+    print("first moment: ",firstMmt)
+    print("second moment: ",secondMmt)
+    print("std: ",np.sqrt(secondMmt))
+
+    plt.plot(binEdges[1:], h/len(angles))
     plt.savefig('RDFADF/adf_'+str(MType)+'_O_'+str(MType)+'.pdf')
     plt.close()
 
@@ -547,6 +554,12 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
                                                   NBList[1][MOIndex[k]],\
                                                   mic=True))
     h, binEdges = np.histogram(angles, edges)
+    firstMmt=getDistMoment(binEdges[1:], h/len(angles), 1, 0.0)
+    secondMmt=getDistMoment(binEdges[1:], h/len(angles), 2, firstMmt)
+    print("M-BO-M angular distribution function:")
+    print("first moment: ",firstMmt)
+    print("second moment: ",secondMmt)
+    print("std: ",np.sqrt(secondMmt))
     plt.plot(binEdges[1:], h/len(angles))
     plt.savefig('RDFADF/adf_'+str(MType)+'_BO_'+str(MType)+'.pdf')
     plt.close()
@@ -554,6 +567,23 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
         for i in range(len(h)):
             fout.write("%12.8f %12.8f\n"%(binEdges[i+1],h[i]/len(angles)))
     return
+
+def getDistMoment(x , y, order, eps):
+    #data should have two columns, first: x(Energy) second:y(DOS)
+    epsArray = [eps]*len(x)
+    #print(epsArray)
+    #x = np.copy(data[:,0])
+    #y = np.copy(data[:,1])
+    xMinusEps = np.subtract(x, epsArray)
+    xToOrder = np.power(xMinusEps, order) 
+
+    if order == 0:
+        return(np.trapz(y, x))
+    else:
+        part1 = np.trapz(xToOrder * y, x)
+        part2 = np.trapz(y, x)
+        return( part1 / part2)
+
 
 def get_BOList(listTypeName, listTypeNum, atoms, cutoff):
     NBList = neighborlist.neighbor_list('ijDd', atoms, cutoff)
