@@ -71,23 +71,23 @@ def get_rdf_M_O(MType, atoms, listTypeName, listTypeNum, rMax, nBins = 200):
     atoms_O = atoms[OTypeStart:OTypeEnd]
     atoms_new = atoms_M + atoms_O
     listA, listB, d = neighborlist.neighbor_list('ijd', atoms_new, rMax)
-    listMBO_indexM=set()
-    listMBO_indexO=set()
+    listMO_indexM=set()
+    listMO_indexO=set()
     d_MO = []
     for i in range(len(d)):
         if ((listA[i] < MLength) \
             and (listB[i] >= MLength)):
             d_MO.append(d[i])
-            listMBO_indexM.add(listA[i])
-            listMBO_indexO.add(listB[i])
+            listMO_indexM.add(listA[i])
+            listMO_indexO.add(listB[i])
     dr = rMax/nBins
     edges = np.arange(0., rMax + 1.1 * dr, dr)
     h, binEdges = np.histogram(d_MO, edges)
     #rho = len(atoms_new) / atoms.get_volume() 
     #factor = 4. / 3. * np.pi * rho * len(atoms_new)
 
-    rho = 0.5*(len(listMBO_indexM)+len(listMBO_indexO)) / atoms.get_volume()
-    factor = 4./3. * np.pi * rho * 0.5*(len(listMBO_indexM)+len(listMBO_indexO))
+    rho = 0.5*(len(listMO_indexM)+len(listMO_indexO)) / atoms.get_volume()
+    factor = 4./3. * np.pi * rho * 0.5*(len(listMO_indexM)+len(listMO_indexO))
 
 
     rdf = h / (factor * (binEdges[1:]**3 - binEdges[:-1]**3)) 
@@ -209,8 +209,8 @@ def get_rdf_M_O(MType, atoms, listTypeName, listTypeNum, rMax, nBins = 200):
     h, binEdges = np.histogram(d_MNO, edges)
     #rho = len(atoms_new) / atoms.get_volume()
     #factor = 4./3. * np.pi * rho * len(atoms_new)
-    rho = 0.5*(len(listMBO_indexM)+len(listMBO_indexO)) / atoms.get_volume()
-    factor = 4./3. * np.pi * rho * 0.5*(len(listMBO_indexM)+len(listMBO_indexO))
+    rho = 0.5*(len(listMNBO_indexM)+len(listMNBO_indexO)) / atoms.get_volume()
+    factor = 4./3. * np.pi * rho * 0.5*(len(listMNBO_indexM)+len(listMNBO_indexO))
     rdf = h / (factor * (binEdges[1:]**3 - binEdges[:-1]**3))
 
     plt.plot(binEdges[1:], rdf)
