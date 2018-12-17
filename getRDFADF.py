@@ -34,12 +34,14 @@ def get_rdf_all(atoms, rMax, nBins = 200):
     #peaks_2 = np.delete(peaks, firstPeakInd)
     #secondPeakInd = np.argmax(rdf[peaks_2])
     #secondPeak = binEdges[peaks_2[secondPeakInd]]
+    print("overal RDF")
     print("first peak of rdf: %12.8f" % firstPeak)
     cutoff = firstPeak*1.25
     print("first NN cutoff set to: %12.8f" % cutoff)
     return(cutoff)
 
 def get_rdf_M_O(MType, atoms, listTypeName, listTypeNum, rMax, nBins = 200):
+    print("\n%s and O bond distribution" % MType)
     #get index of element types of interest
     typeIndex=[]
     for j in range(len(listTypeName)):
@@ -126,9 +128,9 @@ def get_rdf_M_O(MType, atoms, listTypeName, listTypeNum, rMax, nBins = 200):
                                  get_BOList(listTypeName, listTypeNum, atoms,\
                                             cutoff)[1]
     #M-BO bond distance
-    print("%s and bridge O bond distribution" % MType)
-    print("number of bridge O within cutoff(%12.8fA): %d"%(cutoff, len(BOIndexList)))
-    print("number of nonbridge O within cutoff(%12.8fA): %d"%(cutoff, len(NBOIndexList)))
+    print("\n%s and bridge O bond distribution" % MType)
+    #print("number of bridge O within cutoff(%12.8fA): %d"%(cutoff, len(BOIndexList)))
+    #print("number of nonbridge O within cutoff(%12.8fA): %d"%(cutoff, len(NBOIndexList)))
     atoms_new = atoms_M
     MLength = len(atoms_M)
     for i in (BOIndexList):
@@ -185,7 +187,7 @@ def get_rdf_M_O(MType, atoms, listTypeName, listTypeNum, rMax, nBins = 200):
     print("bond distance std : %8.6f" % stdBondD)
 
     #M-NBO bond distance
-    print("%s and non bridge O bond distribution" % MType)
+    print("\n%s and non bridge O bond distribution" % MType)
     atoms_M = atoms[MTypeStart:MTypeEnd]
     atoms_new = atoms_M
     MLength = len(atoms_M)
@@ -260,14 +262,14 @@ def get_rdf_A_B(types, atoms, listTypeName, listTypeNum, rMax, nBins = 200):
         if i < typeIndex[0]:
             typeAStart += listTypeNum[i]
     typeAEnd = typeAStart + listTypeNum[typeIndex[0]]
-    print(types[0],typeAStart,typeAEnd)
+    #print(types[0],typeAStart,typeAEnd)
     typeBStart = 0
     typeBEnd = 0
     for i in range(len(listTypeNum)):
         if i < typeIndex[1]:
             typeBStart += listTypeNum[i]
     typeBEnd = typeBStart + listTypeNum[typeIndex[1]]
-    print(types[1],typeBStart,typeBEnd)
+    #print(types[1],typeBStart,typeBEnd)
 
     atoms_A = atoms[typeAStart:typeAEnd]
     atoms_B = atoms[typeBStart:typeBEnd]
@@ -319,7 +321,7 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
         if i < typeIndex[0]:
             MTypeStart += listTypeNum[i]
     MTypeEnd = MTypeStart + listTypeNum[typeIndex[0]]
-    print(MType, MTypeStart, MTypeEnd)
+    #print(MType, MTypeStart, MTypeEnd)
     
     OType = 'O'
     typeIndex=[]
@@ -332,7 +334,7 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
         if i < typeIndex[0]:
             OTypeStart += listTypeNum[i]
     OTypeEnd = OTypeStart + listTypeNum[typeIndex[0]]
-    print(OType, OTypeStart, OTypeEnd)
+    #print(OType, OTypeStart, OTypeEnd)
 
     NBList = neighborlist.neighbor_list('ijDd', atoms, cutoff)
     nnn = np.bincount(NBList[0]) #number of nearesr neighbors
@@ -498,7 +500,7 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
         h_nbo, binEdges_nbo = np.histogram(angles, edges)
         plt.plot(binEdges_nbo[1:], h_nbo/len(angles), label = 'BO-'+MType+'-NBO')
     else:
-        print("there is no nonbridge-O-" + MType + \
+        print("there is no bridge-O-" + MType + \
                 "-nonbridge-O pair for the current cutoff.")
 
 
@@ -529,7 +531,7 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
 
     firstMmt=getDistMoment(binEdges[1:], h/len(angles), 1, 0.0)
     secondMmt=getDistMoment(binEdges[1:], h/len(angles), 2, firstMmt)
-    print("M-O-M angular distribution function:")
+    print("\n%s-O-%s angular distribution function:"%(MType,MType))
     print("first moment: ",firstMmt)
     print("second moment: ",secondMmt)
     print("std: ",np.sqrt(secondMmt))
@@ -556,7 +558,7 @@ def get_adf_O_M_O(MType, atoms, listTypeName, listTypeNum, rMax, cutoff,\
     h, binEdges = np.histogram(angles, edges)
     firstMmt=getDistMoment(binEdges[1:], h/len(angles), 1, 0.0)
     secondMmt=getDistMoment(binEdges[1:], h/len(angles), 2, firstMmt)
-    print("M-BO-M angular distribution function:")
+    print("\n%s-BO-%s angular distribution function:"%(MType,MType))
     print("first moment: ",firstMmt)
     print("second moment: ",secondMmt)
     print("std: ",np.sqrt(secondMmt))
