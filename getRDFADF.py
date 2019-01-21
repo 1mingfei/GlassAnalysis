@@ -6,7 +6,7 @@ run with "pythonw" as framework
 a collection of codes run analysis on glass structures
 python3 code
 need to install ase first
-
+https://wiki.fysik.dtu.dk/ase/
 '''
 import os
 import sys
@@ -129,8 +129,10 @@ def get_rdf_M_O(MType, atoms, listTypeName, listTypeNum, rMax, nBins = 200):
                                             cutoff)[1]
     #M-BO bond distance
     print("\n%s and bridge O bond distribution" % MType)
-    #print("number of bridge O within cutoff(%12.8fA): %d"%(cutoff, len(BOIndexList)))
-    #print("number of nonbridge O within cutoff(%12.8fA): %d"%(cutoff, len(NBOIndexList)))
+    print("number of bridge O within cutoff(%12.8fA): %d"%(cutoff, len(BOIndexList)))
+    print("number of nonbridge O within cutoff(%12.8fA): %d"%(cutoff, len(NBOIndexList)))
+    print("BO ratio: %12.8f"%(len(BOIndexList)/(len(BOIndexList)+len(NBOIndexList))))
+
     atoms_new = atoms_M
     MLength = len(atoms_M)
     for i in (BOIndexList):
@@ -642,10 +644,12 @@ def processAll(inFile, dr = 1.0):
         cutoff = get_rdf_M_O('Si', atoms, listTypeName, listTypeNum, rMax)[0]
     except:
         cutoff = 2.0
-    #cutoff = 1.65 #test only
     get_adf_O_M_O('Si', atoms, listTypeName, listTypeNum, rMax, cutoff, dr)
-    #cutoff = get_rdf_M_O('Mg', atoms, listTypeName, listTypeNum, rMax)[0]
-    #get_adf_O_M_O('Mg', atoms, listTypeName, listTypeNum, rMax, cutoff, dr)
+    try:
+        cutoff = get_rdf_M_O('Mg', atoms, listTypeName, listTypeNum, rMax)[0]
+    except:
+        cutoff = 2.0
+    get_adf_O_M_O('Mg', atoms, listTypeName, listTypeNum, rMax, cutoff, dr)
     return
 
 if __name__ == "__main__":
